@@ -1,2 +1,17 @@
 # cross-llvm-lfs-arm64
-用LLVM交叉编译Arm64 Linux from scratch，主要参考：https://12101111.github.io/llvm-cross-compile/
+## 前言
+
+* 有一天晚上做了一个梦，梦见纯LLVM编译的Linux跑起来了，醒来后才发现是一场梦，在探索一番后，发现LLVM目前编译glibc还有点问题。在网上搜罗一番后，发现了 https://12101111.github.io/llvm-cross-compile/ 。这才有开始LLVM-lfs的起点。
+
+* 本项目现在还在非常早期，可能随时会失败，如果失败就当作流水账，成功会修改成LFS模式的文档发布，这也是本项目的目标。
+
+## 一些思考
+
+* LFS 和 本项目的一些区别：
+> LFS使用的是GCC，而GCC天然不是交叉编译器，而LLVM天然是交叉编译器。
+>
+> LFS是在X86_64上编译x86_64，为了和宿主系统隔离，多次编译GCC。而cross-llvm-lfs-arm64是在x86_64上编译arm64，天然隔离。
+
+     基于以上，可以直接交叉编译出临时工具链，而不需要多次编译LLVM。
+ 
+ * 要尽可能用LLVM编译系统，除非LLVM不支持。
