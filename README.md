@@ -128,6 +128,7 @@ make mrproper
 make headers
 find usr/include -name '.*' -delete
 rm usr/include/Makefile
+mkdir -pv $LFS/usr/include/
 cp -rv usr/include $LFS/usr
 ```
 
@@ -160,12 +161,36 @@ cd libunwind-10.0.1.src
 sed -i 's/include("${LLVM/#include("${LLVM/g' CMakeLists.txt
 mkdir build
 cd build
-cmake ../  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" -DCMAKE_CXX_COMPILER_TARGET=$LFS_TGT -DCMAKE_C_COMPILER_TARGET=$LFS_TGT -DCMAKE_SYSROOT=$LFS -DCMAKE_INSTALL_PREFIX=$LFS -DCMAKE_CXX_FLAGS="$CXXFLAGS" -DCMAKE_CXX_COMPILER_WORKS=1
+cmake ../  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" -DCMAKE_CXX_COMPILER_TARGET=$LFS_TGT -DCMAKE_C_COMPILER_TARGET=$LFS_TGT -DCMAKE_SYSROOT=$LFS -DCMAKE_INSTALL_PREFIX=$LFS/usr -DCMAKE_CXX_FLAGS="$CXXFLAGS" -DCMAKE_CXX_COMPILER_WORKS=1
 make -j8
 make install
 ```
 
 ### libc++abi
-source: 
+source: https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/libcxxabi-10.0.1.src.tar.xz
+source: https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/libcxx-10.0.1.src.tar.xz
+
+```
+cd $LFS_SRC
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/libcxxabi-10.0.1.src.tar.xz
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/libcxx-10.0.1.src.tar.xz
+cd $LFS_BLD
+tar xvf $LFS_SRC/libcxxabi-10.0.1.src.tar.xz
+tar xvf $LFS_SRC/libcxx-10.0.1.src.tar.xz
+mv libcxxabi-10.0.1.src libcxxabi
+mv libcxx-10.0.1.src libcxx
+cd libcxxabi
+mkdir build
+cd build
+cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" -DCMAKE_CXX_COMPILER_TARGET=$LFS_TGT -DCMAKE_C_COMPILER_TARGET=$LFS_TGT -DCMAKE_SYSROOT=$LFS -DCMAKE_INSTALL_PREFIX=$LFS/usr -DLIBCXXABI_USE_COMPILER_RT=YES -DLIBCXXABI_USE_LLVM_UNWINDER=YES  -DCMAKE_CXX_COMPILER_WORKS=1
+make -j8
+make install
+cd ../../libcxx/
+mkdir build
+cd build
+cmake ../  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" -DCMAKE_CXX_COMPILER_TARGET=$LFS_TGT -DCMAKE_C_COMPILER_TARGET=$LFS_TGT -DCMAKE_SYSROOT=$LFS -DCMAKE_INSTALL_PREFIX=$LFS/usr -DLIBCXX_CXX_ABI=libcxxabi -DLIBCXX_USE_COMPILER_RT=YES -DLIBCXX_HAS_MUSL_LIBC=ON -DLIBCXX_CXX_ABI_INCLUDE_PATHS=$LFS_BLD/libcxxabi/include -DCMAKE_CXX_COMPILER_WORKS=1
+make -j8
+make install
+```
 
 
