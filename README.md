@@ -20,14 +20,47 @@
  
  ## 准备宿主系统
  
- > 本次实验使用debian 11作为宿主系统
- > 环境变量
+ 本次实验使用debian 11作为宿主系统
+ 
+  ### 基本环境变量
  
  ```
  export LFS=~/llfs
- export LFS_TGT=aarch64-llfs-linux-musl
+ export LFS_SRC=~/llfs-sources
+ export LFS_BLD=~/llfs-build
 
  ```
+ 
+ ### 安装编译host LLVM使其成为真正的cross compile
+ 
+ ```
+ sudo apt install build-essential llvm clang lld cmake linux-libc-dev-arm64-cross libc6-dev-arm64-cross
+ ```
+ 
+ 这个步骤是安装llvm，并且编译生成：`libclang_rt.builtins-aarch64.a`，使其真正成为cross compiler.
+ 
+ source code: https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/compiler-rt-9.0.1.src.tar.xz
+ 
+ ```
+ cd ${LFS_SRC}
+ wget https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/compiler-rt-9.0.1.src.tar.xz
+ cd ${LFS_BLD}
+ tar xvf ${LFS_SRC}/compiler-rt-9*
+ cd compiler-rt*
+ mkdir build
+ cd build
+ cmake ../ -DCOMPILER_RT_BUILD_BUILTINS=ON -DCOMPILER_RT_INCLUDE_TESTS=OFF -DCOMPILER_RT_BUILD_SANITIZERS=OFF -DCOMPILER_RT_BUILD_XRAY=OFF -DCOMPILER_RT_BUILD_LIBFUZZER=OFF -DCOMPILER_RT_BUILD_PROFILE=OFF -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu -DCMAKE_ASM_COMPILER_TARGET=aarch64-linux-gnu -DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON -DCMAKE_INSTALL_PREFIX="/usr/lib/clang/9.0.1/" -DCMAKE_C_COMPILER_WORKS=1 -DCMAKE_CXX_COMPILER_WORKS=1 -DCMAKE_SIZEOF_VOID_P=8 -DCMAKE_SYSROOT=/usr/aarch64-linux-gnu/
+ make
+ sudo make install
+ ```
+ 
+ 一些说明：
+ -DCMAKE_C_COMPILER_WORKS=1 -DCMAKE_CXX_COMPILER_WORKS=1 -DCMAKE_SIZEOF_VOID_P=8 ： 这时候cmake 并不能有效检查编译器，但我们的编译器的确能工作，除去这些选项会出错。
+ sudo make install: 我们的确需要安装在host，使host clang能编译出aarch64的目标代码。
+ 
+ 思考：
+ 在clang 编译glibc时，也遇到了configure检查编译器失败，看来也应该bypass编译器检查。
+
  
 ### 在LFS中创建文件系统布局
 ```
@@ -59,18 +92,19 @@ export CXXFLAGS="${COMMON_FLAGS} -stdlib=libc++"
 export LDFLAGS="-fuse-ld=lld -rtlib=compiler-rt -flto=thin"
 ```
 
-### 编译host LLVM使其成为真正的cross compile
-
-
 
 ### 环境变量总结
 ```
 export LFS=~/llfs
+export LFS_SRC=~/llfs-sources
+export LFS_BLD=~/llfs-build
 export LFS_TGT=aarch64-llfs-linux-musl
-export XDG_BIN=$HOME/.local/bin
-export PATH="$XDG_BIN:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 export COMMON_FLAGS=" -O2 -pipe --sysroot=${LFS}"
 export CFLAGS="${COMMON_FLAGS}"
 export CXXFLAGS="${COMMON_FLAGS} -stdlib=libc++"
 export LDFLAGS="-fuse-ld=lld -rtlib=compiler-rt -flto=thin"
 ```
+
+如果需要重新编译： `libclang_rt.builtins-aarch64.a` 需要删掉这里的环境变量。
+
