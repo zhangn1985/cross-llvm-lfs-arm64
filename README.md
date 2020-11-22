@@ -39,7 +39,7 @@
  
  这个步骤是安装llvm，并且编译生成：`libclang_rt.builtins-aarch64.a`，使其真正成为cross compiler.
  
- source code: https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/compiler-rt-9.0.1.src.tar.xz
+ source: https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/compiler-rt-9.0.1.src.tar.xz
  
  ```
  cd ${LFS_SRC}
@@ -56,9 +56,11 @@
  
  一些说明：
  -DCMAKE_C_COMPILER_WORKS=1 -DCMAKE_CXX_COMPILER_WORKS=1 -DCMAKE_SIZEOF_VOID_P=8 ： 这时候cmake 并不能有效检查编译器，但我们的编译器的确能工作，除去这些选项会出错。
+ 
  sudo make install: 我们的确需要安装在host，使host clang能编译出aarch64的目标代码。
  
  思考：
+ 
  在clang 编译glibc时，也遇到了configure检查编译器失败，看来也应该bypass编译器检查。
 
  
@@ -107,4 +109,63 @@ export LDFLAGS="-fuse-ld=lld -rtlib=compiler-rt -flto=thin"
 ```
 
 如果需要重新编译： `libclang_rt.builtins-aarch64.a` 需要删掉这里的环境变量。
+
+## 构建临时工具链
+
+至此，我们已经有能够工作的交叉编译器，能交叉编译目标文件。本章的目的是建立临时工具，以便`chroot`到`$LFS`，生成真正的目标。
+
+### kernel headers
+
+source: https://mirrors.tuna.tsinghua.edu.cn/kernel/v5.x/linux-5.9.9.tar.xz
+
+```
+cd ${LFS_SRC}
+wget https://mirrors.tuna.tsinghua.edu.cn/kernel/v5.x/linux-5.9.9.tar.xz
+cd ${LFS_BLD}
+tar xvf ${LFS_SRC}/linux-5.9.9.tar.xz
+cd linux-5.9.9
+make mrproper
+make headers
+find usr/include -name '.*' -delete
+rm usr/include/Makefile
+cp -rv usr/include $LFS/usr
+```
+
+### musl libc
+
+source: https://musl.libc.org/releases/musl-1.2.1.tar.gz
+
+```
+cd $LFS_SRC
+wget https://musl.libc.org/releases/musl-1.2.1.tar.gz
+cd $LFS_BLD
+cd musl*
+mkdir build
+cd build
+./configure --prefix=/ --target=${LFS_TGT} LIBCC=/usr/lib/clang/9.0.1/lib/linux/libclang_rt.builtins-aarch64.a
+DESTDIR=$LFS/usr make install-headers
+DESTDIR=$LFS/ make install-libs
+```
+
+### libunwind
+
+source: https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/libunwind-10.0.1.src.tar.xz
+
+```
+cd $LFS_SRC
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/libunwind-10.0.1.src.tar.xz
+cd $LFS_BLD
+tar xvf $LFS_SRC/libunwind-10.0.1.src.tar.xz
+cd libunwind-10.0.1.src
+sed -i 's/include("${LLVM/#include("${LLVM/g' CMakeLists.txt
+mkdir build
+cd build
+cmake ../  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" -DCMAKE_CXX_COMPILER_TARGET=$LFS_TGT -DCMAKE_C_COMPILER_TARGET=$LFS_TGT -DCMAKE_SYSROOT=$LFS -DCMAKE_INSTALL_PREFIX=$LFS -DCMAKE_CXX_FLAGS="$CXXFLAGS" -DCMAKE_CXX_COMPILER_WORKS=1
+make -j8
+make install
+```
+
+### libc++abi
+source: 
+
 
