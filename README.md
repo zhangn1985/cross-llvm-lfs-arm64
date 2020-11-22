@@ -194,4 +194,69 @@ make -j8
 make install
 ```
 
+### m4
 
+source: http://ftp.gnu.org/gnu/m4/m4-1.4.18.tar.xz
+
+```
+cd $LFS_SRC
+wget http://ftp.gnu.org/gnu/m4/m4-1.4.18.tar.xz
+cd $LFS_BLD
+tar xvf $LFS_SRC/m4-1.4.18.tar.xz
+cd m4-1.4.18
+mkdir build
+cd build
+../configure --prefix=/usr --host=$LFS_TGT --build=$(build-aux/config.guess)
+make -j8
+make DESTDIR=$LFS install
+```
+
+### ncurses
+
+source: ftp://ftp.invisible-island.net/ncurses/ncurses-6.2.tar.gz
+
+```
+../configure --prefix=/usr   --host=$LFS_TGT  --build=$(./config.guess)  --mandir=/usr/share/man  --with-manpage-format=normal  --with-shared   --without-debug           --without-ada  --without-normal   --enable-widec --disable-stripping 
+make -j16
+make DESTDIR=$LFS  install
+echo "INPUT(-lncursesw)" > $LFS/usr/lib/libncurses.so
+mv -v $LFS/usr/lib/libncursesw.so.6* $LFS/lib
+ln -sfv ../../lib/$(readlink $LFS/usr/lib/libncursesw.so) $LFS/usr/lib/libncursesw.so
+```
+
+### bash
+
+source: http://ftp.gnu.org/gnu/bash/bash-5.0.tar.gz
+
+need to remove all `examples` in configure and Makefile.in
+
+```
+./configure --prefix=/usr                   \
+            --build=$(support/config.guess) \
+            --host=$LFS_TGT                 \
+            --without-bash-malloc
+make -j8
+make DESTDIR=$LFS install
+mkdir $LFS/bin/
+mv $LFS/usr/bin/bash $LFS/bin/bash
+ln -sv bash $LFS/bin/sh
+```
+
+At this point, install `qemu-user-static` run `sudo chroot $LFS` enter target, success.
+
+### coreutils
+
+source: http://mirrors.ustc.edu.cn/gnu/coreutils/coreutils-8.32.tar.xz
+
+need apply patches from debian bullseys
+
+
+```
+./configure --prefix=/usr                     \
+            --host=$LFS_TGT                   \
+            --build=$(build-aux/config.guess) \
+            --enable-install-program=hostname \
+            --enable-no-install-program=kill,uptime
+make -j8
+make DESTDIR=$LFS install
+```
