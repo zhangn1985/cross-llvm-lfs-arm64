@@ -259,4 +259,41 @@ need apply patches from debian bullseys
             --enable-no-install-program=kill,uptime
 make -j8
 make DESTDIR=$LFS install
+mkdir $LFS/usr/sbin
+mv -v $LFS/usr/bin/chroot                                     $LFS/usr/sbin
 ```
+
+### diffutils
+
+source: http://mirrors.ustc.edu.cn/gnu/diffutils/diffutils-3.7.tar.xz
+
+```
+./configure --prefix=/usr --host=$LFS_TGT
+make -j8
+make DESTDIR=$LFS install
+```
+
+### file
+
+source: https://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/f/file/file_5.39.orig.tar.gz
+
+***fail to build, try to skip***
+
+### find
+
+source: http://mirrors.ustc.edu.cn/gnu/findutils/findutils-4.7.0.tar.xz
+
+```
+./configure --prefix=/usr   \
+            --host=$LFS_TGT \
+            --build=$(build-aux/config.guess)
+make 
+make DESTDIR=$LFS install
+```
+
+### gawk
+
+source:http://mirrors.ustc.edu.cn/gnu/gawk/gawk-5.1.0.tar.xz
+
+***failed***
+
