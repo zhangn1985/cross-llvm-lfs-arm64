@@ -166,8 +166,9 @@ make -j8
 make install
 ```
 
-### libc++abi
+### libc++abi/libcxx
 source: https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/libcxxabi-10.0.1.src.tar.xz
+
 source: https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/libcxx-10.0.1.src.tar.xz
 
 ```
