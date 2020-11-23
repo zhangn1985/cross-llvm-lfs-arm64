@@ -295,5 +295,6 @@ make DESTDIR=$LFS install
 
 source:http://mirrors.ustc.edu.cn/gnu/gawk/gawk-5.1.0.tar.xz
 
-***failed***
+### status update
 
+ 目前停在交叉编译LLVM。可能要研究一段时间了。
